@@ -38,11 +38,15 @@ def install_playwright():
     try:
         from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
-            p.chromium.launch()
+            browser = p.chromium.launch()
+            browser.close()
         return True
     except Exception:
-        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"],
-                       capture_output=True)
+        # Install browser + system deps (needed on Linux / Streamlit Cloud)
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"],
+            capture_output=True
+        )
         return True
 
 # ── SYSTEM PROMPT ─────────────────────────────────────────────────────────────
