@@ -35,19 +35,24 @@ except Exception:
 # ── Playwright setup ──────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner="Installing Chromium renderer (first time only)…")
 def install_playwright():
+    # Always install browser binary first (packages.txt handles system deps)
+    # playwright install is a no-op if browser already exists
+    subprocess.run(
+        [sys.executable, "-m", "playwright", "install", "chromium"],
+        capture_output=True
+    )
+    # Verify the browser actually launches
     try:
         from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
             browser = p.chromium.launch()
             browser.close()
         return True
-    except Exception:
-        # Install browser + system deps (needed on Linux / Streamlit Cloud)
-        subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"],
-            capture_output=True
+    except Exception as e:
+        raise RuntimeError(
+            f"Chromium unavailable after install. Error: {e}\n"
+            "Check that packages.txt system deps were installed correctly."
         )
-        return True
 
 # ── SYSTEM PROMPT ─────────────────────────────────────────────────────────────
 def build_system_prompt(inf_type: str, width: int, height: int) -> str:
